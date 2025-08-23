@@ -28,7 +28,7 @@ const classes = {
   infoWrapper: {
     marginLeft: 10,
     display: "flex",
-    flexDirection: "row"
+    flexDirection: "row",
   },
   textContainer: {
     padding: 10,
@@ -68,15 +68,15 @@ export default function Timeline({ alpha, beta, interactiveStateValue = "" }) {
 
         <Text style={classes.textContainer}>=</Text>
         {isBase ? (
-            <Text style={classes.latexContainer} displayMode latex={`
+          <Text style={classes.latexContainer} displayMode latex={`
             \\ket{${Math.round(beta.real)}}
             `}
-            />
-          ) : (
-            <div style={classes.hadamardOutputContainer}>
-              {isHadamard && (<Text style={{ ...classes.latexContainer, paddingTop: 15 }} latex={ketPlusOrMinusTwo}></Text>)}
-            </div>
-          )
+          />
+        ) : (
+          <div style={classes.hadamardOutputContainer}>
+            {isHadamard && (<Text style={{ ...classes.latexContainer, paddingTop: 15 }} latex={ketPlusOrMinusTwo}></Text>)}
+          </div>
+        )
         }
         <Text style={classes.textContainer}>=</Text>
         <div>

@@ -11,22 +11,66 @@ import * as Gates from "../interactive-blochsphere/Gates";
 const ARROW_HEAD_LEN = 1.0;
 const ARROW_HEAD_W = 0.75;
 
-export default function BlochSphere({ className, minHeight = 400, readOnly, style, state, setInteractiveState }) {
+const classes = {
+    root: {
+        display: "flex",
+        alignItems: "stretch",
+        width: "100%",
+        overflow: "hidden",
+    },
+    rootContainer: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+    },
+    infoContainer: {
+        margin: "0 0 8px 0",
+        fontSize: 16,
+        lineHeight: 1.2,
+    },
+    sphereContainer: {
+        flex: 1,
+        minHeight: 1
+    },
+    sideBarContainer: {
+        width: 150,
+        minWidth: 150,
+        flexShrink: 0,
+    }
+}
+
+export default function BlochSphere({ className, readOnly, style, state, setInteractiveState }) {
     const rootRef = useRef(null);
     const infoRef = useRef(null);
     const controlsRef = useRef(null);
     const contentRef = useRef(null);
-    // console.log("state in forked sphere", state)
     const alphaFromState = state?.alpha
     const betaFromState = state?.beta
-    // console.log(polarCoordinatesHelper(alphaFromState, betaFromState))
-    // console.log("alpha", alphaFromState)
-    // console.log("beta", betaFromState)
+
+    function setPosition(object, v) {
+        object.position.set(v.x, v.y, v.z);
+    }
+
+    function addTextAsChild(parent, textSprite, v) {
+        const g = new THREE.Group();
+        setPosition(g, v);
+        g.add(textSprite);
+        parent.add(g);
+    }
+
+    function getAbsoluteHeight(el) {
+        if (!el) return 0;
+        const styles = window.getComputedStyle(el);
+        const margin =
+            parseFloat(styles.marginTop || "0") + parseFloat(styles.marginBottom || "0");
+        return Math.ceil(el.offsetHeight + margin);
+    }
+
     const getTextInfo = useCallback((imagAlpha = 0, realAlpha = 1, imagBeta = 0, realBeta = 0, azimuthal = 0, polar = 0) => {
         return `${realAlpha.toFixed(4)} ${imagAlpha < 0 ? "" : "+"}${imagAlpha.toFixed(4)}i at: ${Math.round((azimuthal / Math.PI) * 180)}°||` +
             `${realBeta.toFixed(4)} ${imagBeta < 0 ? "" : "+"}${imagBeta.toFixed(4)}i at: ${Math.round((polar / Math.PI) * 180)}°`
     }, [])
-
 
     useEffect(() => {
         const rootEl = rootRef.current;
@@ -35,7 +79,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         const contentEl = contentRef.current;
         if (!rootEl || !controlsEl || !contentEl || !infoEl) return;
 
-        // ---------- Scene primitives ----------
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         contentEl.appendChild(renderer.domElement);
 
@@ -47,7 +90,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
 
         const orbit = new OrbitControls(camera, renderer.domElement);
 
-        // Lights
         const addLight = (pos) => {
             const light = new THREE.DirectionalLight(0xffffff, 1);
             light.position.set(pos[0], pos[1], pos[2]);
@@ -56,11 +98,9 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         addLight([-1, 2, 4]);
         addLight([1, -1, -2]);
 
-        // ---------- Bloch sphere geometry ----------
         const sphereRadius = 15;
         const sphereSegments = 32;
 
-        // Great circles
         const mkCircle = (axis) => {
             const g = new THREE.CircleGeometry(sphereRadius, sphereSegments);
             if (axis === "x") g.rotateX(Math.PI / 2);
@@ -75,7 +115,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         const lineYAxis = mkCircle("y");
         scene.add(lineZAxis, lineXAxis, lineYAxis);
 
-        // Axis arrows
         const origin = new THREE.Vector3(0, 0, 0);
         const axisLen = 18;
         const axisColor = 0x000000;
@@ -88,7 +127,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         const arrowZNeg = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), origin, axisLen, axisColor, ARROW_HEAD_LEN, ARROW_HEAD_W);
         scene.add(arrowX, arrowXNeg, arrowY, arrowYNeg, arrowZ, arrowZNeg);
 
-        // Intersection dots
         const dotRadius = 0.2;
         const dotColor = 0x0000ff;
         const dotGeom = new THREE.SphereGeometry(dotRadius, 10, 10);
@@ -195,12 +233,8 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
                 )}°`;
             infoEl.innerText = innerTextStr
 
-            console.log(innerTextStr)
-            console.log("test", getTextInfo(imagAlpha, realAlpha, imagBeta, realBeta, azimuthal, polar))
-
             if (setInteractiveState) {
-            setInteractiveState(getTextInfo(alphaFromState?.imag, alphaFromState?.real, betaFromState?.imag, betaFromState?.real, azimuthalFromHelper, polarFromHelper))
-
+                setInteractiveState(getTextInfo(alphaFromState?.imag, alphaFromState?.real, betaFromState?.imag, betaFromState?.real, azimuthalFromHelper, polarFromHelper))
             }
 
         };
@@ -210,14 +244,16 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
             qubitArrow.setRotationFromAxisAngle(new THREE.Vector3(1, 0, 0), polar);
         };
 
-
         const refreshArrowPosition = () => {
             const { theta: polar, phi: azimuthal } = qubit.polarCoordinates();
             const { theta: polarFromHelper, phi: azimuthalFromHelper } = polarCoordinatesHelper(alphaFromState, betaFromState)
             // console.log("theta", polar, "phi", azimuthal)
             // console.log("thetaFromHelper", polarFromHelper, "phiFromHelper", azimuthalFromHelper)
-            // setArrowWithSphericalPolarCoordinates(polar, azimuthal);
-            setArrowWithSphericalPolarCoordinates(polarFromHelper, azimuthalFromHelper);
+            if (alphaFromState && betaFromState) {
+                setArrowWithSphericalPolarCoordinates(polarFromHelper, azimuthalFromHelper);
+            } else {
+                setArrowWithSphericalPolarCoordinates(polar, azimuthal);
+            }
             refreshTextInfo();
         };
 
@@ -285,7 +321,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         quarterTurnsFolder.open();
         eighthTurnsFolder.open();
 
-        // ---------- Sizing ----------
         const setSizes = () => {
             const rect = contentEl.getBoundingClientRect();
             const width = Math.max(1, Math.floor(rect.width));
@@ -301,7 +336,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         ro.observe(contentEl);
         window.addEventListener("resize", setSizes);
 
-        // ---------- Initial position + render loop ----------
         const refreshAndRender = () => {
             refreshArrowPosition();
         };
@@ -316,7 +350,6 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
         };
         animate();
 
-        // ---------- Cleanup ----------
         return () => {
             disposed = true;
             try { ro.disconnect(); } catch (e) { }
@@ -327,67 +360,29 @@ export default function BlochSphere({ className, minHeight = 400, readOnly, styl
             if (renderer.domElement && renderer.domElement.parentElement === contentEl) {
                 contentEl.removeChild(renderer.domElement);
             }
-            // dispose simple geometries/materials we created
             try { dotGeom.dispose(); } catch (e) { }
             try { dotMat.dispose(); } catch (e) { }
         };
-    }, [minHeight, state]);
+    }, [state]);
+
     return (
         <div
             ref={rootRef}
             className={className}
-            style={{
-                display: "flex",
-                alignItems: "stretch",
-                width: "100%",
-                overflow: "hidden",
-                ...style,
-            }}
+            style={{ ...classes.root, ...style }}
         >
             <div
                 ref={contentRef}
-                style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    overflow: "hidden",
-                }}
+                style={classes.rootContainer}
             >
-                <pre ref={infoRef} style={{ margin: "0 0 8px 0", fontSize: 16, lineHeight: 1.2, display: readOnly ? "none" : "block", }} />
-                <div style={{ flex: 1, minHeight: 1 }} />
+                <pre ref={infoRef} style={{ ...classes.infoContainer, display: readOnly ? "none" : "block", }} />
+                <div style={classes.sphereContainer} />
             </div>
 
             <div
                 ref={controlsRef}
-                style={{
-                    width: 150,
-                    minWidth: 150,
-                    flexShrink: 0,
-                    display: readOnly ? "none" : "block",
-                }}
+                style={{ ...classes.sideBarContainer, display: readOnly ? "none" : "block", }}
             />
         </div>
     );
-}
-
-
-/* ---------------- helpers ---------------- */
-
-function setPosition(object, v) {
-    object.position.set(v.x, v.y, v.z);
-}
-
-function addTextAsChild(parent, textSprite, v) {
-    const g = new THREE.Group();
-    setPosition(g, v);
-    g.add(textSprite);
-    parent.add(g);
-}
-
-function getAbsoluteHeight(el) {
-    if (!el) return 0;
-    const styles = window.getComputedStyle(el);
-    const margin =
-        parseFloat(styles.marginTop || "0") + parseFloat(styles.marginBottom || "0");
-    return Math.ceil(el.offsetHeight + margin);
 }
