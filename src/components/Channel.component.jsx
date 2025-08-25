@@ -1,10 +1,10 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import { useDrop } from 'react-dnd';
-import { ItemTypes } from '../constants';
+import { ItemTypes, CELL_WIDTH } from '../constants';
 import Gate from './Gate.component';
 import { theme } from '../theme';
-import { CELL_WIDTH } from '../constants';
-import ketzero from '../../assets/ketzero.png'
+import ketzero from '../../assets/ketzero.png';
+import { animate } from 'motion';
 
 const classes = {
   wire: {
@@ -18,28 +18,108 @@ const classes = {
   },
   gateContainer: {
     backgroundColor: '#ffffff',
-    zIndex: 11
+    zIndex: 11,
   },
   wireContentContainer: {
     display: 'flex',
     justifyContent: 'flex-start',
-    gap: 20,
+    gap: 30,
     width: '100%',
     paddingLeft: '30px',
+    position: 'relative',
   },
-  channelWrapper: {
-    display: 'flex',
-    width: '100%',
-    gap: 20
-  },
-  ketzero: {
-    height: CELL_WIDTH,
-    width: CELL_WIDTH,
-  }
 };
 
-const Channel = ({ sprites, onDropSprite, channelIndex }) => {
+const Channel = ({
+  sprites,
+  onDropSprite,
+  channelIndex,
+  onResetKet,
+  onStepForward,
+  onStepBackward,
+  onCompile,
+}) => {
   const dropRef = useRef(null);
+  const imgRef = useRef(null);
+
+
+  const [markerXs, setMarkerXs] = useState([]);
+  const [stepIndex, setStepIndex] = useState(0);
+  const [y, setY] = useState(0);
+
+  const measureMarkers = useCallback(() => {
+    const track = dropRef.current;
+    if (!track) return;
+    const trackLeft = track.getBoundingClientRect().left;
+
+    const nodeList = track.querySelectorAll('[data-marker="true"]');
+    const xs = Array.from(nodeList).map((node) => {
+      const box = node.getBoundingClientRect();
+      return (box.left - trackLeft) + 82;
+    });
+
+    setMarkerXs(xs);
+  }, []);
+
+  useEffect(() => {
+    measureMarkers();
+    const onResize = () => measureMarkers();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [sprites, measureMarkers]);
+
+  const animateTo = useCallback((x, y) => {
+    if (!imgRef.current) return;
+    animate(
+      imgRef.current,
+      { transform: `translate(${x}px, ${y}px)` },
+      { duration: 0.35, easing: 'ease-in-out' }
+    );
+  }, []);
+
+  const goToStep = useCallback((nextIdx) => {
+    if (!markerXs.length) return;
+    console.log(nextIdx, markerXs)
+    setStepIndex(nextIdx);
+    animateTo(markerXs[nextIdx], y);
+  }, [markerXs, y, animateTo]);
+
+  const resetKetPosition = useCallback(() => {
+    setY(0);
+    setStepIndex(0);
+    if (imgRef.current) {
+      imgRef.current.style.transform = `translate(0px, 0px)`;
+    }
+  }, []);
+
+  const handleCompile = useCallback(() => {
+    const liftY = -CELL_WIDTH;
+    const firstMarkerX = markerXs[0] ?? 0;
+
+    animateTo(firstMarkerX, liftY);
+
+    setY(liftY);
+    setStepIndex(0);
+  }, [markerXs, animateTo]);
+
+
+  const handleStepForward = useCallback(() => {
+    if (!markerXs.length) return;
+    goToStep(stepIndex + 1);
+  }, [markerXs, stepIndex, goToStep]);
+
+  const handleStepBackward = useCallback(() => {
+    if (!markerXs.length) return;
+    goToStep(stepIndex - 1);
+  }, [markerXs, stepIndex, goToStep]);
+
+
+  useEffect(() => {
+    if (typeof onResetKet === 'function') onResetKet(resetKetPosition);
+    if (typeof onStepForward === 'function') onStepForward(handleStepForward);
+    if (typeof onStepBackward === 'function') onStepBackward(handleStepBackward);
+    if (typeof onCompile === 'function') onCompile(handleCompile);
+  }, [onResetKet, onStepForward, onStepBackward, onCompile, resetKetPosition, handleStepForward, handleStepBackward, handleCompile]);
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: ItemTypes.SPRITE,
@@ -48,8 +128,8 @@ const Channel = ({ sprites, onDropSprite, channelIndex }) => {
       const boundingRect = dropRef.current?.getBoundingClientRect();
       if (!clientOffset || !boundingRect) return;
 
-      const x = clientOffset.x - boundingRect.left;
-      const snappedCol = Math.floor(x / CELL_WIDTH);
+      const localX = clientOffset.x - boundingRect.left;
+      const snappedCol = Math.floor(localX / CELL_WIDTH);
 
       if (snappedCol >= 0) {
         onDropSprite(
@@ -65,20 +145,30 @@ const Channel = ({ sprites, onDropSprite, channelIndex }) => {
           item.originChannel,
           item.originCol
         );
-
       }
     },
-    collect: monitor => ({
-      isOver: !!monitor.isOver(),
-    }),
+    collect: (monitor) => ({ isOver: !!monitor.isOver() }),
   }));
 
   const stateClasses = useMemo(() => ({
+    outerRow: {
+      display: 'flex',
+      width: '100%',
+      gap: 20,
+      left: 100,
+      alignItems: 'center',
+      position: 'relative',
+    },
+    trackCol: {
+      position: 'relative',
+      width: '100%',
+      right: 0,
+      minHeight: CELL_WIDTH,
+    },
     channelContainer: {
       position: 'relative',
-      minHeight: 60,
-      height: 'auto',
-      width: '85%',
+      minHeight: CELL_WIDTH,
+      width: '100%',
       backgroundColor: isOver ? '#f0f0f0' : 'transparent',
       boxSizing: 'border-box',
     },
@@ -87,48 +177,61 @@ const Channel = ({ sprites, onDropSprite, channelIndex }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-    }
+    },
+    animatedKet: {
+      position: 'absolute',
+      left: -100,
+      height: CELL_WIDTH,
+      width: CELL_WIDTH,
+      pointerEvents: 'none',
+      zIndex: 12,
+      transform: 'translate(0px, 0px)',
+    },
   }), [isOver]);
 
   return (
-    <div style={classes.channelWrapper}>
-      <img src={ketzero} style={classes.ketzero}/>
+    <div style={stateClasses.outerRow}>
       <div
-        ref={node => {
+        style={stateClasses.trackCol}
+        ref={(node) => {
           drop(node);
           dropRef.current = node;
         }}
-        style={stateClasses.channelContainer}
       >
-        <div style={classes.wire} />
-        <div
-          style={classes.wireContentContainer}
-        >
-          {Object.entries(sprites)
-            .sort(([a], [b]) => parseInt(a) - parseInt(b))
-            .map(([col, sprite]) => {
-              const spriteHeight = sprite.height ?? CELL_WIDTH;
-              return (
-                <div
-                  key={`${col}-${channelIndex}`}
-                  style={{ ...stateClasses.gateWrapper, height: spriteHeight }}
-                >
-                  <div style={classes.gateContainer}>
-                    <Gate
-                      {...sprite}
-                      size={CELL_WIDTH}
-                      originChannel={channelIndex}
-                      originCol={parseInt(col)}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-        </div>
+        <img ref={imgRef} src={ketzero} style={stateClasses.animatedKet} />
 
+        <div style={stateClasses.channelContainer}>
+          <div style={classes.wire} />
+
+          <div style={classes.wireContentContainer}>
+            <div data-marker="true" style={{ width: 1, height: 1 }} />
+
+            {Object.entries(sprites)
+              .sort(([a], [b]) => parseInt(a) - parseInt(b))
+              .map(([col, sprite]) => {
+                const spriteHeight = sprite.height ?? CELL_WIDTH;
+                return (
+                  <div
+                    key={`${col}-${channelIndex}`}
+                    className="gate-wrapper"
+                    style={{ ...stateClasses.gateWrapper, height: spriteHeight }}
+                  >
+                    <div style={classes.gateContainer}>
+                      <Gate
+                        {...sprite}
+                        size={CELL_WIDTH}
+                        originChannel={channelIndex}
+                        originCol={parseInt(col)}
+                      />
+                    </div>
+                    <div data-marker="true" style={{ width: 1, height: 1 }} />
+                  </div>
+                );
+              })}
+          </div>
+        </div>
       </div>
     </div>
-
   );
 };
 
