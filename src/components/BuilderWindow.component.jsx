@@ -1,4 +1,3 @@
-// BuilderWindow.js
 import React, { useCallback, useEffect, useState, useRef } from 'react';
 import Channel from './Channel.component';
 import Gate from './Gate.component';
@@ -63,7 +62,6 @@ const BuilderWindow = ({ setCurrentState }) => {
         channelStepForwardFns.current.forEach(fn => typeof fn === 'function' && fn());
         return prev + 1;
       } else {
-        console.log("end of instructions!");
         return prev;
       }
     });
@@ -75,7 +73,6 @@ const BuilderWindow = ({ setCurrentState }) => {
         channelStepBackwardFns.current.forEach(fn => typeof fn === 'function' && fn());
         return prev - 1;
       } else {
-        console.log("at the start");
         return prev;
       }
     });
@@ -118,6 +115,8 @@ const BuilderWindow = ({ setCurrentState }) => {
             channelIndex={i}
             sprites={channel.sprites}
             onDropSprite={handleDropSprite}
+            instructions={instructions}
+            currentInstructionsIdx={currentInstructionsIdx}
             onResetKet={(resetFn) => {
               channelResetFns.current[i] = resetFn;
             }}
@@ -135,6 +134,7 @@ const BuilderWindow = ({ setCurrentState }) => {
 
         {channels.map((channel, i) =>
           Object.entries(channel.sprites).map(([col, sprite]) => {
+            console.log(channel.sprites);
             const spriteHeight = sprite.height ?? CELL_WIDTH;
             if (!sprite.isMultiQubit) return null;
 

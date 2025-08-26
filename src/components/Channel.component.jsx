@@ -4,6 +4,9 @@ import { ItemTypes, CELL_WIDTH } from '../constants';
 import Gate from './Gate.component';
 import { theme } from '../theme';
 import ketzero from '../../assets/ketzero.png';
+import ketone from '../../assets/ketone.png';
+import ketplus from '../../assets/ketplus.png';
+import ketminus from '../../assets/ketminus.png';
 import { animate } from 'motion';
 
 const classes = {
@@ -38,18 +41,25 @@ const Channel = ({
   onStepForward,
   onStepBackward,
   onCompile,
+  instructions,
+  currentInstructionsIdx
 }) => {
   const dropRef = useRef(null);
   const imgRef = useRef(null);
-
-
+  const currentInstruction = useMemo(() => instructions[currentInstructionsIdx], [instructions, currentInstructionsIdx])
   const [markerXs, setMarkerXs] = useState([]);
   const [stepIndex, setStepIndex] = useState(0);
   const [y, setY] = useState(0);
 
+  const isBase = useMemo(() => currentInstruction?.alpha.real.toFixed(2) == 1 || currentInstruction?.alpha.real.toFixed(2) == 0, [currentInstruction]);
+  const isHadamard = useMemo(() => currentInstruction?.alpha.real !== 1 && currentInstruction?.alpha.real !== 0, [currentInstruction]);
+
+  console.log(instructions, currentInstructionsIdx)
   const measureMarkers = useCallback(() => {
     const track = dropRef.current;
-    if (!track) return;
+    if (!track) {
+      return;
+    }
     const trackLeft = track.getBoundingClientRect().left;
 
     const nodeList = track.querySelectorAll('[data-marker="true"]');
@@ -77,6 +87,14 @@ const Channel = ({
     );
   }, []);
 
+  const handleSrc = useMemo(() => {
+    if (isBase) {
+      return currentInstruction?.beta.real === 0 ? ketzero : ketone;
+    }
+    if (isHadamard) {
+      return Math.sign(currentInstruction?.beta.real) == 1 ? ketplus : ketminus
+    }
+  }, [currentInstruction])
   const goToStep = useCallback((nextIdx) => {
     if (!markerXs.length) return;
     console.log(nextIdx, markerXs)
@@ -90,6 +108,7 @@ const Channel = ({
     if (imgRef.current) {
       imgRef.current.style.transform = `translate(0px, 0px)`;
     }
+    setMarkerXs(0);
   }, []);
 
   const handleCompile = useCallback(() => {
@@ -198,14 +217,12 @@ const Channel = ({
           dropRef.current = node;
         }}
       >
-        <img ref={imgRef} src={ketzero} style={stateClasses.animatedKet} />
+        <img ref={imgRef} src={handleSrc} style={stateClasses.animatedKet} />
 
         <div style={stateClasses.channelContainer}>
           <div style={classes.wire} />
-
           <div style={classes.wireContentContainer}>
             <div data-marker="true" style={{ width: 1, height: 1 }} />
-
             {Object.entries(sprites)
               .sort(([a], [b]) => parseInt(a) - parseInt(b))
               .map(([col, sprite]) => {
