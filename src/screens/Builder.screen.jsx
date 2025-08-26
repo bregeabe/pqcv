@@ -23,6 +23,16 @@ const classes = {
     width: "80%",
     display: 'flex',
     flexDirection: 'row',
+  },
+  blochSphere: {
+    position: "absolute",
+    right: 0,
+    bottom: 40,
+    width: "25vw",
+    height: 300,
+    border: '1px solid #ddd',
+    backgroundColor: '#FAFAFA',
+    overflow: 'hidden',
   }
 };
 
@@ -46,16 +56,7 @@ export default function BuilderScreen() {
           interactiveStateValue={interactiveState}
         />
         <BlochSphere
-          style={{
-            position: "absolute",
-            right: 0,
-            bottom: 40,
-            width: "25vw",
-            height: 300,
-            border: '1px solid #ddd',
-            backgroundColor: '#FAFAFA',
-            overflow: 'hidden',
-          }}
+          style={classes.blochSphere}
           readOnly
           state={currentState}
           setInteractiveState={setInteractiveState}

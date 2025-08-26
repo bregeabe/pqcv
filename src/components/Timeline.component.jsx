@@ -28,7 +28,7 @@ const classes = {
   infoWrapper: {
     marginLeft: 10,
     display: "flex",
-    flexDirection: "row"
+    flexDirection: "row",
   },
   textContainer: {
     padding: 10,
@@ -44,12 +44,12 @@ const classes = {
 
 export default function Timeline({ alpha, beta, interactiveStateValue = "" }) {
   const isBase = (alpha.real.toFixed(2) == 1 || alpha.real.toFixed(2) == 0);
+  const isHadamard = useMemo(() => alpha.real !== 1 && alpha.real !== 0);
   const ketPlusOrMinus = useMemo(() => Math.sign(beta.real) == 1 ? KET_PLUS : KET_MINUS, [alpha, beta]);
   const ketPlusOrMinusTwo = useMemo(() => Math.sign(beta.real) == 1 ? KET_PLUS_TWO : KET_MINUS_TWO, [alpha, beta]);
   const valAlphaThree = interactiveStateValue?.split(ROW_DELIMETER)[0]
   const valBetaThree = interactiveStateValue?.split(ROW_DELIMETER)[1]
-  console.log(alpha.real, alpha.imag, beta.real, beta.imag)
-  const isHadamard = useMemo(() => alpha.real !== 1 && alpha.real !== 0)
+
   return (
     <div>
       <div style={classes.infoWrapper}>
@@ -68,15 +68,15 @@ export default function Timeline({ alpha, beta, interactiveStateValue = "" }) {
 
         <Text style={classes.textContainer}>=</Text>
         {isBase ? (
-            <Text style={classes.latexContainer} displayMode latex={`
+          <Text style={classes.latexContainer} displayMode latex={`
             \\ket{${Math.round(beta.real)}}
             `}
-            />
-          ) : (
-            <div style={classes.hadamardOutputContainer}>
-              {isHadamard && (<Text style={{ ...classes.latexContainer, paddingTop: 15 }} latex={ketPlusOrMinusTwo}></Text>)}
-            </div>
-          )
+          />
+        ) : (
+          <div style={classes.hadamardOutputContainer}>
+            {isHadamard && (<Text style={{ ...classes.latexContainer, paddingTop: 15 }} latex={ketPlusOrMinusTwo}></Text>)}
+          </div>
+        )
         }
         <Text style={classes.textContainer}>=</Text>
         <div>
@@ -84,8 +84,6 @@ export default function Timeline({ alpha, beta, interactiveStateValue = "" }) {
           <Text>{valBetaThree}</Text>
         </div>
       </div>
-
-
       <div style={classes.container}>
       </div>
     </div>
