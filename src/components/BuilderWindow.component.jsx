@@ -134,7 +134,6 @@ const BuilderWindow = ({ setCurrentState }) => {
 
         {channels.map((channel, i) =>
           Object.entries(channel.sprites).map(([col, sprite]) => {
-            console.log(channel.sprites);
             const spriteHeight = sprite.height ?? CELL_WIDTH;
             if (!sprite.isMultiQubit) return null;
 

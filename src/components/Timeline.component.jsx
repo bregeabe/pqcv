@@ -43,7 +43,7 @@ const classes = {
 
 
 export default function Timeline({ alpha, beta, interactiveStateValue = "" }) {
-  const isBase = (alpha.real.toFixed(2) == 1 || alpha.real.toFixed(2) == 0);
+  const isBase = (Math.abs(alpha.real.toFixed(2)) == 1 || Math.abs(alpha.real.toFixed(2)) == 0);
   const isHadamard = useMemo(() => alpha.real !== 1 && alpha.real !== 0);
   const ketPlusOrMinus = useMemo(() => Math.sign(beta.real) == 1 ? KET_PLUS : KET_MINUS, [alpha, beta]);
   const ketPlusOrMinusTwo = useMemo(() => Math.sign(beta.real) == 1 ? KET_PLUS_TWO : KET_MINUS_TWO, [alpha, beta]);

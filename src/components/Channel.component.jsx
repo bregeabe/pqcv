@@ -51,10 +51,9 @@ const Channel = ({
   const [stepIndex, setStepIndex] = useState(0);
   const [y, setY] = useState(0);
 
-  const isBase = useMemo(() => currentInstruction?.alpha.real.toFixed(2) == 1 || currentInstruction?.alpha.real.toFixed(2) == 0, [currentInstruction]);
+  const isBase = useMemo(() => !currentInstruction || Math.abs(currentInstruction?.alpha.real.toFixed(2)) == 1 || Math.abs(currentInstruction?.alpha.real.toFixed(2)) == 0, [currentInstruction]);
   const isHadamard = useMemo(() => currentInstruction?.alpha.real !== 1 && currentInstruction?.alpha.real !== 0, [currentInstruction]);
 
-  console.log(instructions, currentInstructionsIdx)
   const measureMarkers = useCallback(() => {
     const track = dropRef.current;
     if (!track) {
@@ -89,15 +88,15 @@ const Channel = ({
 
   const handleSrc = useMemo(() => {
     if (isBase) {
-      return currentInstruction?.beta.real === 0 ? ketzero : ketone;
+      return (currentInstruction?.beta.real === 0 || !currentInstruction) ? ketzero : ketone;
     }
     if (isHadamard) {
       return Math.sign(currentInstruction?.beta.real) == 1 ? ketplus : ketminus
     }
   }, [currentInstruction])
+
   const goToStep = useCallback((nextIdx) => {
     if (!markerXs.length) return;
-    console.log(nextIdx, markerXs)
     setStepIndex(nextIdx);
     animateTo(markerXs[nextIdx], y);
   }, [markerXs, y, animateTo]);
