@@ -1,3 +1,6 @@
+import { sqrt, complex, pow, e, pi, multiply, identity } from 'mathjs'
+
+
 export const SPRITE_ORDER = [
   { name: 'H.png', gateId: 'a928dfa9-75b0-4152-8ee1-22f1dfe680b5' },
   { name: 'S.png', gateId: '06ebe310-bc30-4d57-ac2a-f272ddb26ab1' },
@@ -22,7 +25,7 @@ export const FOOTER_LINKS = [
 
 export const CELL_WIDTH = 70;
 
-export const KET_ZERO = {"alpha": { real: 1, imag: 0 }, "beta": { real: 0, imag: 0 }};
+export const KET_ZERO = { "alpha": { real: 1, imag: 0 }, "beta": { real: 0, imag: 0 } };
 export const KET_ONE = [{ real: 0, imag: 0 }, { real: 1, imag: 0 }];
 export const KET_PLUS = `\\frac{\\ket{1} + \\ket{0}}{\\sqrt{2}}`;
 export const KET_MINUS = `\\frac{\\ket{1} - \\ket{0}}{\\sqrt{2}}`;
@@ -33,3 +36,19 @@ export const NORM = `\\frac{1}{\\sqrt{2}}`
 export const HADAMARD_MATRIX = '\\begin{pmatrix} 1 & 1 \\\\ 1 & -1 \\end{pmatrix}'
 
 export const ROW_DELIMETER = '||'
+
+export const i = complex(0, 1);
+export const onesq2 = 1 / sqrt(2);
+export const I = identity(2);
+export const H = multiply(onesq2, [[1, 1], [1, -1]]);
+export const X = [[0, 1], [1, 0]];
+export const Y = [[0, -i], [i, 0]];
+export const Z = [[1, 0], [0, -1]];
+export const S = [[1, 0], [0, i]];
+export const T = [[1, 0], [0, pow(e, i * pi / 4)]];
+export const CNOT = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]];
+export const SWAP = [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]];
+export const ZERO = [[1], [0]];
+export const ONE = [[0], [1]];
+
+export const TWO_QUBIT_BELL_PAIR = [0.7071067811865475, 0, 0, 0.7071067811865475];
