@@ -24,6 +24,7 @@
     "interactive-blochsphere": "^0.2.0",
     "katex": "^0.16.22",
     "lil-gui": "^0.20.0",
+    "mathjs": "^14.8.1",
     "motion": "^12.23.12",
     "npm": "^11.5.2",
     "react": "^19.1.0",
