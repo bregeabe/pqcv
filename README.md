@@ -19,10 +19,10 @@ Help users visualize and understand quantum circuits by animating multiple-qubit
 Most circuit visualizers/simulators provide the output of the circuit as a whole. I think it would help beginners to have the option to go deeper into the circuit step by step to better understand what's actually happening.
 
 # Builder 1
-![builderWindow](/assets/builderwindowgates.png)
-## Output from Builder 1
-![output](assets/output.png)
-Each row (top to bottom) of the output corresponds to the state vector of the qubit after each gate (left to right) of the circuit.
+<video width="600" controls>
+  <source src="/assets/pqcv-demo.mov" type="video/quicktime">
+  Your browser does not support the video tag.
+</video><br><br>
 
 # Setup
 ## install npm packages
