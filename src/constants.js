@@ -51,4 +51,8 @@ export const SWAP = [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]];
 export const ZERO = [[1], [0]];
 export const ONE = [[0], [1]];
 
+export const GATE_MAP = {"a928dfa9-75b0-4152-8ee1-22f1dfe680b5": H, "06ebe310-bc30-4d57-ac2a-f272ddb26ab1": S, "d43a8020-2058-4889-89c3-a7711b4b5681": X, "c4359cfd-4428-4072-b341-aba781068ab8": Y, "087ba4ff-1c16-43ed-ac96-cf0229f63345": Z}
+
+export const HADAMARD_CONSTANT = 0.7071067811865475;
+
 export const TWO_QUBIT_BELL_PAIR = [0.7071067811865475, 0, 0, 0.7071067811865475];
