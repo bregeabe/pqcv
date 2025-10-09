@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import BuilderScreen from './screens/Builder.screen';
 import BlochSphereScreen from './screens/BlochSphere.screen';
+import 'katex/dist/katex.min.css';
 
 export default function App() {
   return (

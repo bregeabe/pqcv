@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import Channel from './Channel.component';
 import Gate from './Gate.component';
 import { theme } from '../theme';
@@ -12,6 +12,7 @@ const classes = {
     width: '100%',
     height: '100%',
     overflowY: 'auto',
+    overflowX: 'hidden',
     backgroundColor: theme.color.white,
     paddingTop: 120,
     boxSizing: 'border-box',
@@ -32,14 +33,14 @@ const BuilderWindow = ({ setCurrentState }) => {
   const [hasCompiled, setHasCompiled] = useState(false);
   const [currentInstructionsIdx, setCurrentInstructionsIdx] = useState(0);
   const [instructions, setInstructions] = useState([]);
-
-
+  const channelResetFns = useRef([]);
+  const channelStepForwardFns = useRef([]);
+  const channelStepBackwardFns = useRef([]);
+  const channelCompileFns = useRef([]);
 
   const onSubmit = useCallback(async () => {
     const channelGatesById = channels.reduce((acc, channel, index) => {
-      const gateIds = Object.values(channel.sprites)
-        .map(sprite => sprite.gateId)
-
+      const gateIds = Object.values(channel.sprites).map(sprite => sprite.gateId);
       acc[index] = gateIds;
       return acc;
     }, {});
@@ -48,57 +49,41 @@ const BuilderWindow = ({ setCurrentState }) => {
       const res = await generateInstructions(channelGatesById);
       setInstructions([KET_ZERO, ...res]);
       setHasCompiled(true);
+
+      channelCompileFns.current.forEach(fn => typeof fn === 'function' && fn());
     } catch (error) {
       console.error('Error generating instructions:', error);
     }
-  }, [channels])
+  }, [channels, channelCompileFns]);
 
-const onStepForward = useCallback(() => {
-  setCurrentInstructionsIdx((prev) => {
-    if (prev < instructions.length - 1) {
-      return prev + 1;
-    } else {
-      console.log("end of instructions!");
-      return prev;
-    }
-  });
-}, [instructions]);
+  const onStepForward = useCallback(() => {
+    setCurrentInstructionsIdx(prev => {
+      if (prev < instructions.length - 1) {
+        channelStepForwardFns.current.forEach(fn => typeof fn === 'function' && fn());
+        return prev + 1;
+      } else {
+        return prev;
+      }
+    });
+  }, [instructions, channelStepForwardFns]);
 
-const onStepBackward = useCallback(() => {
-  setCurrentInstructionsIdx((prev) => {
-    if (prev > 0) {
-      return prev - 1;
-    } else {
-      console.log("at the start");
-      return prev;
-    }
-  });
-}, [instructions]);
+  const onStepBackward = useCallback(() => {
+    setCurrentInstructionsIdx(prev => {
+      if (prev > 0) {
+        channelStepBackwardFns.current.forEach(fn => typeof fn === 'function' && fn());
+        return prev - 1;
+      } else {
+        return prev;
+      }
+    });
+  }, [instructions, channelStepBackwardFns]);
 
   useEffect(() => {
-    console.log("here", instructions[currentInstructionsIdx])
-    console.log("here", instructions[currentInstructionsIdx])
-    if (!instructions || instructions.length === 0) {
-      return;
-    }
-    setCurrentState(instructions[currentInstructionsIdx])
-  }, [currentInstructionsIdx, instructions])
+    if (!instructions || instructions.length === 0) return;
+    setCurrentState(instructions[currentInstructionsIdx]);
+  }, [currentInstructionsIdx, instructions]);
 
-  const addChannel = () => {
-    setChannels([...channels, { sprites: {} }]);
-    setHasCompiled(false);
-  };
-  const removeChannel = () => {
-    if (channels.length > 1) setChannels(channels.slice(0, -1));
-    setHasCompiled(false);
-  };
-  const handleDropSprite = (
-    channelIndex,
-    col,
-    sprite,
-    originChannel = null,
-    originCol = null
-  ) => {
+  const handleDropSprite = (channelIndex, col, sprite, originChannel = null, originCol = null) => {
     setChannels(prev =>
       prev.map((channel, i) => {
         const newSprites = { ...channel.sprites };
@@ -114,6 +99,7 @@ const onStepBackward = useCallback(() => {
             isMultiQubit: sprite.type === 'image' && sprite.height === 160,
           };
         }
+
         setHasCompiled(false);
         return { ...channel, sprites: newSprites };
       })
@@ -129,6 +115,20 @@ const onStepBackward = useCallback(() => {
             channelIndex={i}
             sprites={channel.sprites}
             onDropSprite={handleDropSprite}
+            instructions={instructions}
+            currentInstructionsIdx={currentInstructionsIdx}
+            onResetKet={(resetFn) => {
+              channelResetFns.current[i] = resetFn;
+            }}
+            onStepForward={(forwardFn) => {
+              channelStepForwardFns.current[i] = forwardFn;
+            }}
+            onStepBackward={(backwardFn) => {
+              channelStepBackwardFns.current[i] = backwardFn;
+            }}
+            onCompile={(compileFn) => {
+              channelCompileFns.current[i] = compileFn;
+            }}
           />
         ))}
 
@@ -167,15 +167,26 @@ const onStepBackward = useCallback(() => {
         )}
 
         <div style={classes.buttonContainer}>
-          {/* <Button onPress={addChannel} title="+ Add qubit" />
-          <Button onPress={removeChannel} title="- Remove qubit" /> */}
           <Button onPress={onSubmit} title="Compile" />
-          <Button onPress={onStepForward} title="Step Forward" disabled={!hasCompiled} />
-          <Button onPress={onStepBackward} title="Step Backward" disabled={!hasCompiled} />
-
+          <Button
+            onPress={() => {
+              channelResetFns.current.forEach(reset => typeof reset === 'function' && reset());
+              setChannels(prev =>
+                prev.map(channel => ({
+                  ...channel,
+                  sprites: {},
+                }))
+              );
+              setHasCompiled(false);
+              setCurrentInstructionsIdx(0);
+              setInstructions([]);
+            }}
+            title="Reset"
+          />
+          <Button onPress={onStepBackward} title="<- Step Backward" disabled={!hasCompiled} />
+          <Button onPress={onStepForward} title="Step Forward ->" disabled={!hasCompiled} />
         </div>
       </div>
-
     </div>
   );
 };
