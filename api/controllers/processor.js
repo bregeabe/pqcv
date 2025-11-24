@@ -1,6 +1,6 @@
 import { pow, multiply, kron, identity, zeros, log2, norm } from 'mathjs'
 import { serializeGates } from '../helpers.js';
-
+// adapted from https://barghouthi.github.io/2021/08/05/quantum/
 export function prepareState(n) {
     let state = zeros(pow(2, n))
     state._data[0] = 1;
